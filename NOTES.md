@@ -53,7 +53,18 @@ This document captures key architectural decisions, design trade-offs, deploymen
 
 ## 🛒 Order Processing & Inventory Reservation
 
-*(Detailed notes on order payload validation, volume/tier discount pricing formulas, atomic stock reservation/restoration, and lifecycle state machines will be documented here).*
+- **Pre-Execution Payload Validation**:
+  - Pydantic schema validation on `OrderCreate` strictly enforces non-empty item lists and rejects duplicate `book_id` references within the same order with HTTP 422 Unprocessable Entity before any database transaction begins.
+- **Pricing & Multi-Tier Volume Discount Calculation**:
+  - Base discount determined by membership tier (`apprentice`: 0%, `adept`: 5%, `master`: 10%, `supreme`: 15%).
+  - Bulk discount (+5%) applied cumulatively when total item count across all order lines $\ge 10$.
+  - Line total integer math with explicit integer floor division (`subtotal * percent // 100`) guarantees zero floating-point rounding discrepancies.
+- **Atomic Inventory Reservation**:
+  - Pre-flight stock validation across all order items guarantees all-or-nothing stock deduction.
+  - Decrements book stock at the point of `pending` order creation, preventing race conditions or overselling.
+- **Order Lifecycle & Idempotency**:
+  - `pay_order`: Transitions `pending` $\to$ `paid`. Stock remains reserved. Rejects subsequent modifications with HTTP 409 Conflict.
+  - `cancel_order`: Transitions `pending` $\to$ `cancelled` and atomically restores all reserved inventory (`item.book.stock += item.quantity`). Rejects attempts to cancel non-pending orders with HTTP 409 Conflict.
 
 ---
 
