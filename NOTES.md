@@ -41,6 +41,13 @@ This document captures key architectural decisions, design trade-offs, deploymen
 - **Tier Access Control**:
   - Tiers follow strict ordinal ranking: `apprentice` (0) < `adept` (1) < `master` (2) < `supreme` (3).
   - Restricted materials access is enforced via `tier_at_least(member.tier, RESTRICTED_MIN_TIER)` using inclusive index comparisons ($\ge$), granting access to `master` and `supreme` members while blocking `apprentice` and `adept` with HTTP 403 Forbidden.
+- **Member Activity Statistics Aggregation**:
+  - Implemented `get_member_stats` (`GET /members/{id}/stats`) which aggregates real-time metrics for a member:
+    - `orders_paid` and `total_spent_cents`: Computed exclusively over orders in `paid` status.
+    - `active_loans`: Count of unreturned loans (`returned_at is None`), including overdue loans.
+    - `overdue_loans`: Count of active loans where current clock time exceeds `due_at` (`now > due_at`).
+    - `late_fees_cents`: Sum of accumulated late fees across all returned loans.
+    - Returns HTTP 404 if the requested member does not exist.
 
 ---
 
