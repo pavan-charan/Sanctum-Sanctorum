@@ -70,13 +70,32 @@ This document captures key architectural decisions, design trade-offs, deploymen
 
 ## 📖 Library Lending & Returns
 
-*(Detailed notes on loan model extensions, borrow quota enforcement, read-time dynamic loan status calculation, return restoration, and daily stepped late fees will be documented here).*
+- **Loan Model Architecture & Schema Design**:
+  - `Loan` ORM entity extended with `due_at` timestamp, nullable `returned_at`, and integer `late_fee_cents` (defaulting to 0).
+- **Borrowing Rules & Tier Quotas**:
+  - Strict hierarchical precondition validation on `POST /loans`:
+    1. Member & Book existence (`404`)
+    2. Restricted book access check (`403`)
+    3. Active overdue loan check blocking new borrows (`409`)
+    4. Duplicate active loan of the same book check (`409`)
+    5. Tier concurrent active loan quotas (`apprentice`: 1, `adept`: 3, `master`: 5, `supreme`: unlimited) (`409`)
+    6. Inventory availability check (`409`)
+  - Decrements available stock by 1 and issues a fixed 14-day loan window (`due_at = now + 14 days`).
+- **Dynamic Read-Time Status Resolution**:
+  - Status is evaluated at request time without database polling: `returned` if `returned_at` is set, `overdue` if `now > due_at`, and `active` otherwise.
+  - Strict boundary condition: exactly at `due_at` (`now == due_at`), a loan remains `active` with zero late fee penalty.
+- **Return Processing & Ceiling-Based Late Fee Computation**:
+  - On `POST /loans/{id}/return`, atomically marks `returned_at = now` and increments book stock by 1.
+  - Overdue penalties are calculated as $\lceil \frac{\text{seconds overdue}}{86400} \rceil \times 25\text{ cents}$, capped at `book.price_cents` using the current price at the exact time of return. Attempting to return an already-returned loan raises HTTP 409 Conflict.
 
 ---
 
 ## 📊 Reporting & Analytics
 
-*(Detailed notes on best-selling books aggregation and sales reporting queries will be documented here).*
+- **Top-Selling Books Aggregation (`GET /reports/top-books`)**:
+  - Implemented `top_books` aggregating `sum(OrderItem.quantity)` across books joined through orders in `paid` status exclusively (`Order.status == 'paid'`).
+  - Books with zero paid copies sold are omitted from the report via SQL `HAVING sum(OrderItem.quantity) > 0`.
+  - Results are sorted by `copies_sold DESC` followed by `title ASC` tie-breaking, with pagination bounded by configurable `limit` parameters (1..50, defaulting to 5).
 
 ---
 
@@ -85,3 +104,4 @@ This document captures key architectural decisions, design trade-offs, deploymen
 - **Tools Used**: Google Antigravity (Gemini 3.7 Flash) for code analysis, architecture design, and incremental test-driven implementation.
 - **Workflow & Scaffolding**: Leveraged AI for systematic code inspection against `SPEC.md`, mapping acceptance criteria to Pydantic schemas and SQLAlchemy ORM models, and organizing incremental atomic commits.
 - **Critical Oversight & Human Verification**: All generated logic, mathematical formulas (discounts, late fees, ISBN checksums), and exception handling orders are rigorously validated against pytest suites and specific domain constraints.
+
