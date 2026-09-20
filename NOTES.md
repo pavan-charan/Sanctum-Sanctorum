@@ -24,6 +24,11 @@ This document captures key architectural decisions, design trade-offs, deploymen
 - **Partial Book Updates (`PATCH /books/{id}`)**:
   - Exposed `PATCH /books/{id}` supporting partial updates of mutable attributes (`title`, `author`, `price_cents`, `stock`, `restricted`).
   - Strict Pydantic model validation with `reject_explicit_nulls` enforces that explicit `null` updates are rejected with 422, while `isbn` modifications and unknown properties are safely and silently ignored per spec.
+- **Catalogue Search, Filtering, Sorting & Pagination**:
+  - Flexible query parameter parsing with `q` (case-insensitive substring match across title or author with automatic escaping).
+  - Price bounding with inclusive `min_price` and `max_price` limits.
+  - Pre-pagination total count computed dynamically over filtered query subsets using `select(func.count()).select_from(...)`.
+  - Multi-attribute sort support (`title`, `-title`, `price`, `-price`) with secondary `id ASC` tie-breaking for deterministic ordering across page boundaries.
 
 
 ---
