@@ -21,6 +21,9 @@ This document captures key architectural decisions, design trade-offs, deploymen
   - Implemented `normalize_isbn13` to strip hyphens and whitespace, ensure exact 13-digit length, and validate the standard EAN/ISBN-13 modulo-10 checksum ($10 - (\sum w_i d_i \pmod{10})) \pmod{10}$ with alternating weights 1 and 3. Rejects invalid formats or checksum mismatches with HTTP 422.
 - **Catalogue Duplicate Prevention**:
   - `create_book` checks against normalized ISBN values prior to persistence, returning HTTP 409 Conflict if the ISBN is already registered.
+- **Partial Book Updates (`PATCH /books/{id}`)**:
+  - Exposed `PATCH /books/{id}` supporting partial updates of mutable attributes (`title`, `author`, `price_cents`, `stock`, `restricted`).
+  - Strict Pydantic model validation with `reject_explicit_nulls` enforces that explicit `null` updates are rejected with 422, while `isbn` modifications and unknown properties are safely and silently ignored per spec.
 
 
 ---
