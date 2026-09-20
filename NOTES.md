@@ -38,6 +38,9 @@ This document captures key architectural decisions, design trade-offs, deploymen
 - **Email Normalization & Case-Insensitive Uniqueness**:
   - `MemberCreate` Pydantic validator trims surrounding whitespace and downcases all email strings prior to regex pattern verification.
   - `create_member` service executes a case-insensitive lookup (`Member.email.ilike(...)`) to guarantee uniqueness across all case variations, raising HTTP 409 Conflict if already registered.
+- **Tier Access Control**:
+  - Tiers follow strict ordinal ranking: `apprentice` (0) < `adept` (1) < `master` (2) < `supreme` (3).
+  - Restricted materials access is enforced via `tier_at_least(member.tier, RESTRICTED_MIN_TIER)` using inclusive index comparisons ($\ge$), granting access to `master` and `supreme` members while blocking `apprentice` and `adept` with HTTP 403 Forbidden.
 
 ---
 
