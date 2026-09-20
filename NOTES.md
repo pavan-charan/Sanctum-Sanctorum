@@ -53,7 +53,8 @@ This document captures key architectural decisions, design trade-offs, deploymen
 
 ## 🛒 Order Processing & Inventory Reservation
 
-*(Detailed notes on order payload validation, volume/tier discount pricing formulas, atomic stock reservation/restoration, and lifecycle state machines will be documented here).*
+- **Pre-Execution Payload Validation**:
+  - Pydantic schema validation on `OrderCreate` strictly enforces non-empty item lists and rejects duplicate `book_id` references within the same order with HTTP 422 Unprocessable Entity before any database transaction begins.
 
 ---
 
