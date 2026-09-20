@@ -19,6 +19,8 @@ This document captures key architectural decisions, design trade-offs, deploymen
 
 - **ISBN-13 Normalization & Checksum Validation**:
   - Implemented `normalize_isbn13` to strip hyphens and whitespace, ensure exact 13-digit length, and validate the standard EAN/ISBN-13 modulo-10 checksum ($10 - (\sum w_i d_i \pmod{10})) \pmod{10}$ with alternating weights 1 and 3. Rejects invalid formats or checksum mismatches with HTTP 422.
+- **Catalogue Duplicate Prevention**:
+  - `create_book` checks against normalized ISBN values prior to persistence, returning HTTP 409 Conflict if the ISBN is already registered.
 
 
 ---
