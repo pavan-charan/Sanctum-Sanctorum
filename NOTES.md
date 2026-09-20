@@ -35,7 +35,9 @@ This document captures key architectural decisions, design trade-offs, deploymen
 
 ## 👥 Membership & Tier Access Control
 
-*(Detailed notes on email normalization, case-insensitive uniqueness checks, tier access hierarchies, and member statistics aggregation will be documented here).*
+- **Email Normalization & Case-Insensitive Uniqueness**:
+  - `MemberCreate` Pydantic validator trims surrounding whitespace and downcases all email strings prior to regex pattern verification.
+  - `create_member` service executes a case-insensitive lookup (`Member.email.ilike(...)`) to guarantee uniqueness across all case variations, raising HTTP 409 Conflict if already registered.
 
 ---
 
