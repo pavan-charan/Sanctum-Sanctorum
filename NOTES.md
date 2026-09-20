@@ -17,7 +17,9 @@ This document captures key architectural decisions, design trade-offs, deploymen
 
 ## 📚 Books Catalogue & Search
 
-*(Detailed notes on ISBN-13 checksum validation, duplicate conflict prevention, partial updates, and catalogue filtering/sorting/pagination will be documented here).*
+- **ISBN-13 Normalization & Checksum Validation**:
+  - Implemented `normalize_isbn13` to strip hyphens and whitespace, ensure exact 13-digit length, and validate the standard EAN/ISBN-13 modulo-10 checksum ($10 - (\sum w_i d_i \pmod{10})) \pmod{10}$ with alternating weights 1 and 3. Rejects invalid formats or checksum mismatches with HTTP 422.
+
 
 ---
 
